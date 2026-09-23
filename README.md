@@ -54,6 +54,34 @@ Isso é implementado em `noticias/views.py` (funções `enviar_para_revisao`,
 **Painel Editorial** (`/painel/`), a tela mais importante para mostrar ao
 professor.
 
+## Features obrigatórias do P1
+
+### Feature 1 — Busca e Filtro na Listagem
+
+A página inicial (`/`) tem um formulário de busca acima das notícias:
+
+- **Busca por texto** (`?q=`): procura o termo no **título** ou no **resumo**
+  da matéria, com `icontains` (não diferencia maiúsculas de minúsculas).
+- **Filtro por categoria** (`?categoria=`) e **por tag** (`?tag=`), com `<select>`.
+- Os filtros funcionam juntos ou separados, e o termo digitado continua no
+  campo depois da pesquisa (`value="{{ request.GET.q }}"`).
+- Sem resultados, o `{% empty %}` mostra uma mensagem com link para limpar
+  os filtros.
+- **Desafio extra:** todas as condições são montadas com `Q()` e aplicadas
+  numa única consulta (`views.lista_posts`).
+
+> Observação: no SQLite, `icontains` só ignora maiúsculas/minúsculas em
+> letras sem acento (buscar "MARICÁ" não encontra "Maricá"). No PostgreSQL
+> isso funciona normalmente.
+
+### Feature 2 — Validação Customizada no Formulário
+
+`PostForm.clean_conteudo()` (em `forms.py`) impede que uma matéria seja
+salva com o conteúdo abaixo de **50 caracteres** (`Post.CONTEUDO_MINIMO`),
+contando sem os espaços das pontas. A mensagem de erro aparece no próprio
+formulário, via `{{ form.as_p }}`. A view `publicar_post` repete a checagem,
+porque matérias criadas pelo `/admin/` não passam pelo `PostForm`.
+
 ## Estrutura do projeto
 
 ```
@@ -147,8 +175,11 @@ então não precisa instalar mais nada.
    - clique em "Aprovar e publicar" numa matéria em revisão;
    - mostre que ela aparece imediatamente na home pública.
 3. **Nova Matéria** (`/novo/`) — crie uma matéria pelo formulário
-   (ModelForm da Aula 5), mostre que ela nasce como rascunho.
-4. **Site público** (`/`) — mostre a listagem, o filtro por categoria e a
+   (ModelForm da Aula 5), mostre que ela nasce como rascunho. Antes, tente
+   salvar com um conteúdo curto para mostrar a mensagem de erro da
+   **Feature 2**.
+4. **Site público** (`/`) — mostre a listagem com a **busca e os filtros
+   da Feature 1** (ex.: buscar "time" e depois escolher uma categoria) e a
    página de detalhe de um post, incluindo o formulário de comentário
    (CSRF token, `{{ form.as_p }}`).
 5. Se quiser, explique o ciclo **URL → View → Template** olhando
