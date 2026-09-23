@@ -66,6 +66,11 @@ class Post(models.Model):
         (PUBLICADO, 'Publicado'),
     ]
 
+    # Regra de negócio (Feature 2 do P1): tamanho mínimo do texto de uma
+    # matéria para que ela possa ir ao ar. Usado no PostForm e na view
+    # de publicação.
+    CONTEUDO_MINIMO = 50
+
     titulo = models.CharField(max_length=200)
     resumo = models.CharField(
         max_length=300,

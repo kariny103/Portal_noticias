@@ -208,6 +208,15 @@ def devolver_rascunho(request, pk):
 def publicar_post(request, pk):
     """REVISAO -> PUBLICADO (aprovação editorial)"""
     post = get_object_or_404(Post, pk=pk)
+    # Mesma regra do PostForm.clean_conteudo, repetida aqui porque uma
+    # matéria criada pelo /admin não passa pelo nosso formulário.
+    if len(post.conteudo.strip()) < Post.CONTEUDO_MINIMO:
+        messages.error(
+            request,
+            f'"{post.titulo}" não pode ser publicado: o conteúdo precisa ter '
+            f'pelo menos {Post.CONTEUDO_MINIMO} caracteres. Edite a matéria e tente de novo.',
+        )
+        return redirect('painel_editorial')
     post.status = Post.PUBLICADO
     post.data_publicacao = timezone.now()
     post.save()

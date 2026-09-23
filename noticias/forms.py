@@ -30,6 +30,27 @@ class PostForm(forms.ModelForm):
             'tags': forms.CheckboxSelectMultiple(),
         }
 
+    def clean_conteudo(self):
+        """
+        Feature 2 do P1 — Validação customizada.
+
+        Regra de negócio: uma matéria não pode ser publicada com um texto
+        abaixo do tamanho mínimo (Post.CONTEUDO_MINIMO caracteres). Como
+        todo post criado aqui segue para revisão e publicação, a regra é
+        checada já no cadastro/edição — assim nenhuma "notícia" vazia ou
+        com uma linha só chega ao Painel Editorial.
+
+        Os espaços das pontas são descartados antes de contar, para que
+        não dê para "enganar" a regra preenchendo com espaços em branco.
+        """
+        conteudo = (self.cleaned_data.get('conteudo') or '').strip()
+        if len(conteudo) < Post.CONTEUDO_MINIMO:
+            raise forms.ValidationError(
+                f'O conteúdo da matéria precisa ter pelo menos {Post.CONTEUDO_MINIMO} '
+                f'caracteres para poder ser publicado (atualmente tem {len(conteudo)}).'
+            )
+        return conteudo
+
 
 class ComentarioForm(forms.ModelForm):
     class Meta:

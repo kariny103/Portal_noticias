@@ -591,6 +591,18 @@ a:hover {
     font-size: 0.95rem;
 }
 
+/* Mensagens de erro de validação geradas pelo {{ form.as_p }} (Feature 2) */
+.errorlist {
+    list-style: none;
+    margin: 0 0 6px;
+    padding: 8px 12px;
+    background: #fbdcdc;
+    color: #8a1a1a;
+    border-radius: 6px;
+    font-family: Arial, sans-serif;
+    font-size: 0.88rem;
+}
+
 .pagina-form {
     max-width: 700px;
     margin: 0 auto;
