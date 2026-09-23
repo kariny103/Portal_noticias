@@ -1,0 +1,55 @@
+{% comment %}
+Barra lateral reaproveitada na home e nas páginas de categoria
+(via {% include %}, Aula 5). Espera receber no contexto:
+`mais_lidas` (queryset de Post) e `categorias` (queryset de Categoria).
+{% endcomment %}
+<aside class="coluna-lateral">
+
+    <div class="widget widget-mais-lidas">
+        <h3>Mais Lidas</h3>
+        {% if mais_lidas %}
+            <ol>
+                {% for post in mais_lidas %}
+                    <li><a href="{% url 'detalhe_post' post.pk %}">{{ post.titulo }}</a></li>
+                {% endfor %}
+            </ol>
+        {% else %}
+            <p class="widget-vazio">Ainda não há dados de leitura suficientes.</p>
+        {% endif %}
+    </div>
+
+    <div class="widget widget-tempo">
+        <h3>Previsão do Tempo</h3>
+        <div class="tempo-conteudo">
+            <svg class="icone-sol" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
+                <circle cx="12" cy="12" r="5" fill="currentColor" />
+                <g stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                    <line x1="12" y1="1" x2="12" y2="4" />
+                    <line x1="12" y1="20" x2="12" y2="23" />
+                    <line x1="1" y1="12" x2="4" y2="12" />
+                    <line x1="20" y1="12" x2="23" y2="12" />
+                    <line x1="4.2" y1="4.2" x2="6.3" y2="6.3" />
+                    <line x1="17.7" y1="17.7" x2="19.8" y2="19.8" />
+                    <line x1="4.2" y1="19.8" x2="6.3" y2="17.7" />
+                    <line x1="17.7" y1="6.3" x2="19.8" y2="4.2" />
+                </g>
+            </svg>
+            <div>
+                <p class="tempo-cidade">Maricá, RJ</p>
+                <p class="tempo-temperatura">27°C</p>
+                <p class="tempo-condicao">Ensolarado</p>
+            </div>
+        </div>
+        <p class="widget-nota">*dados ilustrativos — sem integração com serviço de meteorologia</p>
+    </div>
+
+    <div class="widget widget-categorias">
+        <h3>Categorias</h3>
+        <ul>
+            {% for categoria in categorias %}
+                <li><a href="{% url 'posts_por_categoria' categoria.id %}">{{ categoria.nome }}</a></li>
+            {% endfor %}
+        </ul>
+    </div>
+
+</aside>

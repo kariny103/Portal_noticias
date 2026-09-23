@@ -1,0 +1,69 @@
+{% extends 'noticias/base.html' %}
+
+{% block titulo %}Painel Editorial — Portal de Últimas Notícias de Maricá{% endblock %}
+
+{% block content %}
+    <section class="pagina-painel">
+        <div class="painel-cabecalho">
+            <h1>Painel Editorial</h1>
+            <a href="{% url 'novo_post' %}" class="botao botao-primario">+ Nova Matéria</a>
+        </div>
+        <p class="painel-legenda">
+            Fluxo de publicação: <strong>Rascunho</strong> → <strong>Em Revisão</strong> → <strong>Publicado</strong>.
+            Toda matéria nova entra como rascunho e só vai ao ar depois de aprovada aqui.
+        </p>
+
+        <table class="tabela-painel">
+            <thead>
+                <tr>
+                    <th>Título</th>
+                    <th>Categoria</th>
+                    <th>Autor</th>
+                    <th>Status</th>
+                    <th>Ações</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for post in posts %}
+                    <tr>
+                        <td>{{ post.titulo }}</td>
+                        <td>{{ post.categoria.nome }}</td>
+                        <td>{{ post.autor.nome }}</td>
+                        <td>
+                            <span class="badge-status badge-status-{{ post.status }}">{{ post.get_status_display }}</span>
+                        </td>
+                        <td class="acoes-painel">
+                            {% if post.status == 'rascunho' %}
+                                <form method="post" action="{% url 'enviar_revisao' post.pk %}" class="form-acao-inline">
+                                    {% csrf_token %}
+                                    <button type="submit" class="botao-mini botao-mini-avancar">Enviar p/ revisão</button>
+                                </form>
+                            {% elif post.status == 'revisao' %}
+                                <form method="post" action="{% url 'publicar_post' post.pk %}" class="form-acao-inline">
+                                    {% csrf_token %}
+                                    <button type="submit" class="botao-mini botao-mini-publicar">Aprovar e publicar</button>
+                                </form>
+                                <form method="post" action="{% url 'devolver_rascunho' post.pk %}" class="form-acao-inline">
+                                    {% csrf_token %}
+                                    <button type="submit" class="botao-mini botao-mini-voltar">Devolver</button>
+                                </form>
+                            {% elif post.status == 'publicado' %}
+                                <a href="{% url 'detalhe_post' post.pk %}" class="botao-mini botao-mini-ver">Ver no site</a>
+                                <form method="post" action="{% url 'despublicar_post' post.pk %}" class="form-acao-inline">
+                                    {% csrf_token %}
+                                    <button type="submit" class="botao-mini botao-mini-voltar">Despublicar</button>
+                                </form>
+                            {% endif %}
+                            <a href="{% url 'editar_post' post.pk %}" class="botao-mini botao-mini-editar">Editar</a>
+                            <a href="{% url 'excluir_post' post.pk %}" class="botao-mini botao-mini-excluir">Excluir</a>
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="5" class="vazio">Nenhuma matéria cadastrada. Clique em "+ Nova Matéria" para começar.</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </section>
+{% endblock %}

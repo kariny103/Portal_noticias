@@ -1,0 +1,25 @@
+# Ambiente virtual
+venv/
+env/
+.venv/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Django
+db.sqlite3
+media/
+staticfiles/
+
+# Variáveis de ambiente (segredo - nunca versionar)
+.env
+
+# Editor
+.vscode/
+.idea/
+
+# SO
+.DS_Store
+Thumbs.db

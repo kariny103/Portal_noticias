@@ -1,0 +1,18 @@
+{% extends 'noticias/base.html' %}
+
+{% block titulo %}Excluir matéria — Portal de Últimas Notícias de Maricá{% endblock %}
+
+{% block content %}
+    <section class="pagina-form">
+        <h1>Excluir matéria</h1>
+        <p>Tem certeza que deseja excluir a matéria <strong>"{{ post.titulo }}"</strong>? Esta ação não pode ser desfeita.</p>
+
+        <form method="post" class="form-post">
+            {% csrf_token %}
+            <div class="form-acoes">
+                <button type="submit" class="botao botao-perigo">Sim, excluir</button>
+                <a href="{% url 'painel_editorial' %}" class="botao botao-secundario">Cancelar</a>
+            </div>
+        </form>
+    </section>
+{% endblock %}

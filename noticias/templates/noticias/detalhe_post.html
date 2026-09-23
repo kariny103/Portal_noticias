@@ -1,0 +1,53 @@
+{% extends 'noticias/base.html' %}
+
+{% block titulo %}{{ post.titulo }} — Portal de Últimas Notícias de Maricá{% endblock %}
+
+{% block content %}
+    <article class="post-detalhe">
+        <span class="badge-categoria">
+            <a href="{% url 'posts_por_categoria' post.categoria.id %}">{{ post.categoria.nome }}</a>
+        </span>
+        <h1>{{ post.titulo }}</h1>
+        <p class="post-detalhe-meta">
+            Por <strong>{{ post.autor.nome }}</strong> · {{ post.data_publicacao|date:"d/m/Y - H:i" }}
+        </p>
+
+        {% if post.imagem_capa %}
+            <img src="{{ post.imagem_capa.url }}" alt="{{ post.titulo }}" class="post-detalhe-imagem">
+        {% endif %}
+
+        <p class="post-detalhe-resumo">{{ post.resumo }}</p>
+
+        <div class="post-detalhe-corpo">
+            {{ post.conteudo|linebreaks }}
+        </div>
+
+        {% if post.tags.all %}
+            <div class="post-detalhe-tags">
+                {% for tag in post.tags.all %}
+                    <span class="tag">#{{ tag.nome }}</span>
+                {% endfor %}
+            </div>
+        {% endif %}
+    </article>
+
+    <section class="comentarios">
+        <h2>Comentários ({{ comentarios|length }})</h2>
+
+        {% for comentario in comentarios %}
+            <div class="comentario">
+                <p class="comentario-autor">{{ comentario.nome_autor }} <span>· {{ comentario.data_criacao|date:"d/m/Y H:i" }}</span></p>
+                <p class="comentario-texto">{{ comentario.texto }}</p>
+            </div>
+        {% empty %}
+            <p class="vazio">Seja o primeiro a comentar.</p>
+        {% endfor %}
+
+        <h3>Deixe seu comentário</h3>
+        <form method="post" class="form-comentario">
+            {% csrf_token %}
+            {{ form.as_p }}
+            <button type="submit" class="botao botao-primario">Enviar comentário</button>
+        </form>
+    </section>
+{% endblock %}

@@ -1,0 +1,36 @@
+{% extends 'noticias/base.html' %}
+
+{% block titulo %}Portal de Últimas Notícias de Maricá{% endblock %}
+
+{% block content %}
+    <section class="hero">
+        <h1>Últimas Notícias</h1>
+        <p>Fique por dentro do que foi aprovado pela nossa equipe editorial.</p>
+    </section>
+
+    <div class="layout-principal">
+        <section class="coluna-principal grade-posts">
+            {% for post in posts %}
+                <article class="card-post">
+                    {% if post.imagem_capa %}
+                        <a href="{% url 'detalhe_post' post.pk %}">
+                            <img src="{{ post.imagem_capa.url }}" alt="{{ post.titulo }}" class="card-post-imagem">
+                        </a>
+                    {% endif %}
+                    <div class="card-post-corpo">
+                        <span class="badge-categoria">{{ post.categoria.nome }}</span>
+                        <h2><a href="{% url 'detalhe_post' post.pk %}">{{ post.titulo }}</a></h2>
+                        <p class="card-post-resumo">{{ post.resumo }}</p>
+                        <p class="card-post-meta">
+                            Por {{ post.autor.nome }} · {{ post.data_publicacao|date:"d/m/Y H:i" }}
+                        </p>
+                    </div>
+                </article>
+            {% empty %}
+                <p class="vazio">Nenhuma matéria publicada ainda. Vá ao <a href="{% url 'painel_editorial' %}">Painel Editorial</a> e publique a primeira!</p>
+            {% endfor %}
+        </section>
+
+        {% include 'noticias/_sidebar.html' %}
+    </div>
+{% endblock %}
