@@ -8,6 +8,38 @@
         <p>Fique por dentro do que foi aprovado pela nossa equipe editorial.</p>
     </section>
 
+    {# Feature 1 — Busca e Filtro. method="get" coloca os campos na URL (?q=...&categoria=...&tag=...) #}
+    <form method="get" action="{% url 'lista_posts' %}" class="form-busca" role="search">
+        <div class="form-busca-campo form-busca-texto">
+            <label for="busca-q">Buscar</label>
+            <input type="search" id="busca-q" name="q" value="{{ request.GET.q }}" placeholder="Título ou resumo da matéria">
+        </div>
+        <div class="form-busca-campo">
+            <label for="busca-categoria">Categoria</label>
+            <select id="busca-categoria" name="categoria">
+                <option value="">Todas</option>
+                {% for categoria in categorias %}
+                    <option value="{{ categoria.id }}" {% if categoria.id|stringformat:"s" == categoria_selecionada %}selected{% endif %}>{{ categoria.nome }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="form-busca-campo">
+            <label for="busca-tag">Tag</label>
+            <select id="busca-tag" name="tag">
+                <option value="">Todas</option>
+                {% for tag in tags %}
+                    <option value="{{ tag.id }}" {% if tag.id|stringformat:"s" == tag_selecionada %}selected{% endif %}>{{ tag.nome }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="form-busca-acoes">
+            <button type="submit" class="botao botao-primario">Filtrar</button>
+            {% if busca_ativa %}
+                <a href="{% url 'lista_posts' %}" class="botao botao-secundario">Limpar</a>
+            {% endif %}
+        </div>
+    </form>
+
     <div class="layout-principal">
         <section class="coluna-principal grade-posts">
             {% for post in posts %}
@@ -27,7 +59,11 @@
                     </div>
                 </article>
             {% empty %}
+                {% if busca_ativa %}
+                    <p class="vazio">Nenhuma matéria encontrada para os filtros escolhidos{% if request.GET.q %} (busca: "{{ request.GET.q }}"){% endif %}. Tente outro termo ou <a href="{% url 'lista_posts' %}">limpe os filtros</a>.</p>
+                {% else %}
                 <p class="vazio">Nenhuma matéria publicada ainda. Vá ao <a href="{% url 'painel_editorial' %}">Painel Editorial</a> e publique a primeira!</p>
+                {% endif %}
             {% endfor %}
         </section>
 

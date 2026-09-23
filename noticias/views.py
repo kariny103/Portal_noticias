@@ -10,12 +10,12 @@ As views deste arquivo estão organizadas em três grupos:
   3. Editorial -> o fluxo de publicação (rascunho -> revisão -> publicado)
 """
 from django.contrib import messages
-from django.db.models import F
+from django.db.models import F, Q
 from django.shortcuts import render, redirect, get_object_or_404
 from django.utils import timezone
 
 from .forms import ComentarioForm, PostForm
-from .models import Categoria, Post
+from .models import Categoria, Post, Tag
 
 
 def _menu_contexto():
@@ -38,13 +38,44 @@ def _menu_contexto():
 # ---------------------------------------------------------------------
 
 def lista_posts(request):
-    """Página inicial: só mostra matérias já publicadas."""
+    """
+    Página inicial: só mostra matérias já publicadas.
+
+    Feature 1 do P1 — Busca e Filtro na Listagem. Os parâmetros chegam
+    pela URL (ex.: /?q=praia&categoria=3&tag=2) e podem ser usados
+    juntos ou separados:
+      - q         -> busca por texto no título ou no resumo da matéria
+      - categoria -> restringe a uma categoria
+      - tag       -> restringe a matérias marcadas com uma tag
+
+    Desafio extra: todas as condições são montadas com Q() e aplicadas
+    numa única consulta ao banco.
+    """
+    q = request.GET.get('q', '').strip()
+    categoria_id = request.GET.get('categoria', '')
+    tag_id = request.GET.get('tag', '')
+
+    filtros = Q(status=Post.PUBLICADO)
+    if q:
+        # icontains = "contém", sem diferenciar maiúsculas de minúsculas.
+        # O | (OU) faz o termo ser procurado no título OU no resumo.
+        filtros &= Q(titulo__icontains=q) | Q(resumo__icontains=q)
+    if categoria_id.isdigit():
+        filtros &= Q(categoria_id=categoria_id)
+    if tag_id.isdigit():
+        filtros &= Q(tags__id=tag_id)
+
     posts = (
-        Post.objects.filter(status=Post.PUBLICADO)
+        Post.objects.filter(filtros)
         .select_related('categoria', 'autor')
+        .distinct()  # evita repetir a matéria ao filtrar por tag (ManyToMany)
     )
     return render(request, 'noticias/lista_posts.html', {
         'posts': posts,
+        'tags': Tag.objects.all(),
+        'busca_ativa': bool(q or categoria_id or tag_id),
+        'categoria_selecionada': categoria_id,
+        'tag_selecionada': tag_id,
         **_menu_contexto(),
     })
 

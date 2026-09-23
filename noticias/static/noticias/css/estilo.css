@@ -224,6 +224,55 @@ a:hover {
     font-family: Arial, sans-serif;
 }
 
+/* Busca e filtro da listagem (Feature 1) */
+.form-busca {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: 14px;
+    margin: -20px 0 40px;
+    padding: 18px 20px;
+    background: var(--cor-card);
+    border: 1px solid var(--cor-borda);
+    border-radius: 8px;
+    font-family: Arial, sans-serif;
+}
+
+.form-busca-campo {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    flex: 1 1 160px;
+}
+
+.form-busca-texto {
+    flex: 2 1 240px;
+}
+
+.form-busca label {
+    font-size: 0.8rem;
+    font-weight: bold;
+    color: var(--cor-texto-suave);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.form-busca input,
+.form-busca select {
+    width: 100%;
+    padding: 9px 10px;
+    border: 1px solid var(--cor-borda);
+    border-radius: 6px;
+    font-family: Arial, sans-serif;
+    font-size: 0.95rem;
+    background: #fff;
+}
+
+.form-busca-acoes {
+    display: flex;
+    gap: 8px;
+}
+
 /* Layout de duas colunas: notícias à esquerda, widgets à direita */
 .layout-principal {
     display: grid;
