@@ -31,7 +31,7 @@ class Command(BaseCommand):
 
         autor, _ = Autor.objects.get_or_create(
             nome='Ana Redatora',
-            defaults={'email': 'ana.redatora@portalmarica.com', 'bio': 'Repórter de plantão do Portal de Últimas Notícias de Maricá.'},
+            defaults={'email': 'ana.redatora@portalmarica.com', 'bio': 'Repórter de plantão do Portal Notícias Maricá.'},
         )
         autor2, _ = Autor.objects.get_or_create(
             nome='Carlos Editor',
@@ -40,7 +40,7 @@ class Command(BaseCommand):
 
         # Uma matéria já publicada
         publicado, criado = Post.objects.get_or_create(
-            titulo='Portal de Últimas Notícias de Maricá entra no ar com nova plataforma',
+            titulo='Portal Notícias Maricá entra no ar com nova plataforma',
             defaults={
                 'resumo': 'Site foi reconstruído do zero com Django e traz um novo fluxo de aprovação editorial.',
                 'conteudo': (

@@ -1,6 +1,6 @@
-# Portal de Últimas Notícias de Maricá — Projeto P1 (Django)
+# Portal Notícias Maricá — Projeto P1 (Django)
 
-Blog / Portal de Últimas Notícias de Maricá com **fluxo de publicação com aprovação editorial**
+Blog / Portal Notícias Maricá com **fluxo de publicação com aprovação editorial**
 (3 estados: Rascunho → Em Revisão → Publicado), construído em **Django puro**
 (sem framework de front-end separado), seguindo exatamente o padrão ensinado
 nas Aulas 3, 4 e 5 da disciplina: **MVT, ORM, Django Admin, Views, URLs,

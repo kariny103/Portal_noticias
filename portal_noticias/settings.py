@@ -1,5 +1,5 @@
 """
-Configurações do projeto Portal de Últimas Notícias de Maricá.
+Configurações do projeto Portal Notícias Maricá.
 
 Estrutura seguindo o padrão ensinado nas Aulas 3-4 da disciplina:
 projeto "portal_noticias" (configurações gerais) + app "noticias"

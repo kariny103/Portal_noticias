@@ -1,5 +1,5 @@
 """
-Models do Portal de Últimas Notícias de Maricá.
+Models do Portal Notícias Maricá.
 
 Entidades pedidas no projeto: Post, Categoria, Tag, Autor, Comentário.
 Cada classe aqui vira uma tabela no banco (via migrations) — exatamente
