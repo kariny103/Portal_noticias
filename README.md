@@ -82,22 +82,100 @@ contando sem os espaços das pontas. A mensagem de erro aparece no próprio
 formulário, via `{{ form.as_p }}`. A view `publicar_post` repete a checagem,
 porque matérias criadas pelo `/admin/` não passam pelo `PostForm`.
 
+## P2 — de MVP a mini-SaaS (Aulas 13 e 14)
+
+O card do projeto pede para a P2: **múltiplos blogs, papéis, dashboard e
+API DRF**. Já estão prontos os pilares das Aulas 13 e 14:
+
+### Pilar 4 — API REST com DRF (Aula 13)
+
+Endpoints em `/api/` (arquivos `serializers.py`, `api_views.py` e
+`api_urls.py`, com as *generics* do DRF):
+
+| Recurso | Listar / criar | Detalhar / atualizar / apagar |
+|---|---|---|
+| Matérias | `GET/POST /api/posts/` | `GET/PUT/PATCH/DELETE /api/posts/<id>/` |
+| Categorias | `GET/POST /api/categorias/` | `.../api/categorias/<id>/` |
+| Tags | `GET/POST /api/tags/` | `.../api/tags/<id>/` |
+| Autores | `GET/POST /api/autores/` | `.../api/autores/<id>/` |
+
+- Só usuário autenticado (`IsAuthenticated`). Sem login a resposta é 403.
+- `fields` sempre listados explicitamente: o campo `organizacao` nunca aparece no JSON.
+- O `status` da matéria é só leitura: a aprovação editorial continua no Painel.
+- A regra da Feature 2 (conteúdo mínimo) também vale na API (`validate_conteudo` → erro 400).
+- Teste no navegador: entre em `/api-auth/login/` e abra `/api/posts/` (Browsable API).
+  Ou pelo terminal: `curl -u editor_marica:portal2026 http://127.0.0.1:8000/api/posts/`.
+
+A revisão da P1 pedida na Aula 13 está em [MELHORIAS_P1.md](MELHORIAS_P1.md).
+
+### Pilar 1 — Multi-organização: vários blogs na mesma base (Aula 14)
+
+Cada **organização é um blog** (ex.: *Portal Notícias Maricá* e
+*Portal Notícias Niterói*). Estratégia: **coluna discriminadora**, ou seja,
+uma FK para a organização em todo model de negócio.
+
+- **App `core`**: `Organizacao` (nome, slug, criada_em), a base abstrata
+  `DaOrganizacao` e o `Perfil` (liga o `User` ao blog dele).
+- **Todos os models do blog herdam `DaOrganizacao`**: Categoria, Tag, Autor, Post e Comentario.
+- **Migração sem perder os dados da P1**, em 3 etapas:
+  `0003_organizacao_nula` (FK com `null=True`) → `0004_dados_org`
+  (`RunPython` move tudo para o blog "Portal Notícias Maricá") →
+  `0005_organizacao_obrigatoria` (FK obrigatória).
+- **Regra de ouro**: `core/utils.py` tem o `org_atual(request)`, o único
+  lugar que define o blog do usuário, sempre a partir de `request.user.perfil`
+  e nunca da URL ou do formulário. Toda view interna usa `@organizacao_required`.
+- **Toda consulta filtra** por `organizacao`. Todo `get_object_or_404` recebe
+  a organização: abrir o id de uma matéria de outro blog dá **404**.
+- **Criação com `commit=False`**: o blog é preenchido pela view, não pelo form.
+- **Selects filtrados**: categoria, autor e tags do `PostForm` (e da API) só
+  mostram e aceitam registros do próprio blog.
+- **Unicidade por blog**: `UniqueConstraint(organizacao, nome)` em Categoria e Tag.
+- **Site público por blog**: `/` lista os blogs, e cada blog tem o seu site em
+  `/blog/<slug>/`, com busca, categorias e "Mais Lidas" só daquele blog.
+- **Superusuário sem Perfil** não quebra o sistema: recebe uma mensagem e é
+  levado ao Admin para criar o Perfil.
+
+### Roteiro de isolamento (Aula 14, slide 18): resultado
+
+Executado com dois usuários de blogs diferentes. Os cenários também viraram
+testes automatizados em `noticias/tests.py` (`python manage.py test`, 21 testes, todos passando).
+
+| Cenário | Esperado | Resultado |
+|---|---|---|
+| Editor A abre o Painel / a lista da API | Vê só as matérias do blog A | ✅ OK |
+| Editor A abre `/post/<id-do-B>/editar/` ou `/api/posts/<id-do-B>/` | 404 | ✅ OK |
+| Editor A cria uma matéria (pelo form ou pela API, mesmo enviando `organizacao` do B no JSON) | Gravada no blog A | ✅ OK |
+| Formulário do editor A | Selects só com opções do blog A; categoria do B é recusada | ✅ OK |
+| Editor A cadastra categoria com nome que já existe no blog B | Permitido (unicidade é por blog) | ✅ OK |
+| Editor A cadastra categoria repetida no próprio blog | Erro 400, sem IntegrityError | ✅ OK |
+| Site público do blog A com o id de uma matéria do B | 404 | ✅ OK |
+
 ## Estrutura do projeto
 
 ```
 portal_noticias/          <- projeto Django (settings, urls gerais)
+core/                     <- app da P2: o que é transversal ao sistema
+    models.py              Organizacao (blog), DaOrganizacao (base abstrata), Perfil
+    utils.py                org_atual() e @organizacao_required
+    admin.py                 registro de Organizacao e Perfil
 noticias/                 <- app Django (a "peça de Lego" do sistema)
     models.py              Categoria, Tag, Autor, Post, Comentario
     admin.py                registro no Django Admin
     forms.py                 PostForm e ComentarioForm (ModelForm)
     views.py                  lógica de cada página
     urls.py                    urls do app (criado à mão, como na Aula 5)
+    serializers.py              P2: serializers da API (DRF)
+    api_views.py                 P2: views da API (generics)
+    api_urls.py                   P2: urls da API (/api/...)
+    tests.py                       P2: roteiro de isolamento automatizado
     templates/noticias/         HTML com herança de templates (base.html)
+    templates/registration/     tela de login
     static/noticias/css/         estilo.css
     management/commands/
-        seed_dados.py             popula dados de exemplo
+        seed_dados.py             popula 2 blogs, usuários e dados de exemplo
 manage.py
 requirements.txt
+MELHORIAS_P1.md            revisão da P1 (Aula 13)
 .env / .env.example        configuração (nunca comitar o .env real)
 ```
 
@@ -113,13 +191,21 @@ python manage.py runserver
 ```
 
 Abra no navegador:
-- **http://127.0.0.1:8000/** — site público (só matérias publicadas)
-- **http://127.0.0.1:8000/painel/** — Painel Editorial (fluxo de aprovação)
-- **http://127.0.0.1:8000/admin/** — Django Admin
+- **http://127.0.0.1:8000/** — lista dos blogs
+- **http://127.0.0.1:8000/blog/marica/** — site público de um blog (só matérias publicadas)
+- **http://127.0.0.1:8000/painel/** — Painel Editorial (exige login; mostra só o blog do usuário)
+- **http://127.0.0.1:8000/api/posts/** — API REST (exige login)
+- **http://127.0.0.1:8000/admin/** — Django Admin (vê todos os blogs)
 
-Login do Admin já criado:
-- usuário: `admin`
-- senha: `admin123`
+Logins já criados:
+
+| Usuário | Senha | Blog |
+|---|---|---|
+| `admin` (superusuário) | `admin123` | Portal Notícias Maricá |
+| `editor_marica` | `portal2026` | Portal Notícias Maricá |
+| `editor_niteroi` | `portal2026` | Portal Notícias Niterói |
+
+> Se o banco não tiver esses usuários, rode `python manage.py seed_dados`.
 
 ### Rodando em outra máquina (do zero)
 
@@ -128,10 +214,15 @@ python -m venv venv
 .\venv\Scripts\activate
 pip install -r requirements.txt
 python manage.py migrate
-python manage.py seed_dados          # opcional: cria dados de exemplo
+python manage.py seed_dados          # opcional: cria 2 blogs, editores e dados de exemplo
 python manage.py createsuperuser     # cria seu próprio login de admin
 python manage.py runserver
 ```
+
+> Use sempre `python -m pip install ...` com o venv ativo. Se o venv foi
+> copiado de outra pasta, o `pip.exe` pode instalar no venv antigo.
+
+Para rodar os testes do roteiro de isolamento: `python manage.py test`.
 
 ## Banco de dados: SQLite (padrão) ou PostgreSQL
 
@@ -204,9 +295,10 @@ então não precisa instalar mais nada.
 - **Credenciais fora do código** (Aula 4): `python-dotenv` + `.env`
   (nunca versionado — veja `.gitignore`).
 
-## Próximos passos (P2, fora do escopo deste P1)
+## Próximos passos da P2
 
-- Autenticação/login para autores e revisores (permissões reais).
-- Múltiplos blogs e papéis de usuário (editor, redator, leitor).
-- Dashboard com métricas.
-- API com Django REST Framework (DRF), introduzido na Aula 13.
+- [x] API com Django REST Framework (Aula 13)
+- [x] Múltiplos blogs com isolamento de dados e login (Aula 14)
+- [ ] Papéis de usuário (ex.: editor-chefe aprova/publica, redator só escreve), nas telas e na API (Aula 15)
+- [ ] Dashboard com métricas por blog: matérias por status, mais lidas e publicações por período (Aula 17)
+- [ ] Mover a regra de conteúdo mínimo para `Post.clean()` (item 5 do MELHORIAS_P1.md)
