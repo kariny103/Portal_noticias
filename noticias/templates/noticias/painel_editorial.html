@@ -1,16 +1,17 @@
 {% extends 'noticias/base.html' %}
 
-{% block titulo %}Painel Editorial — Portal Notícias Maricá{% endblock %}
+{% block titulo %}Painel Editorial — {{ blog.nome }}{% endblock %}
 
 {% block content %}
     <section class="pagina-painel">
         <div class="painel-cabecalho">
-            <h1>Painel Editorial</h1>
+            <h1>Painel Editorial <small class="painel-blog">{{ blog.nome }}</small></h1>
             <a href="{% url 'novo_post' %}" class="botao botao-primario">+ Nova Matéria</a>
         </div>
         <p class="painel-legenda">
             Fluxo de publicação: <strong>Rascunho</strong> → <strong>Em Revisão</strong> → <strong>Publicado</strong>.
             Toda matéria nova entra como rascunho e só vai ao ar depois de aprovada aqui.
+            Você vê somente as matérias do seu blog.
         </p>
 
         <table class="tabela-painel">
@@ -48,7 +49,7 @@
                                     <button type="submit" class="botao-mini botao-mini-voltar">Devolver</button>
                                 </form>
                             {% elif post.status == 'publicado' %}
-                                <a href="{% url 'detalhe_post' post.pk %}" class="botao-mini botao-mini-ver">Ver no site</a>
+                                <a href="{% url 'detalhe_post' blog.slug post.pk %}" class="botao-mini botao-mini-ver">Ver no site</a>
                                 <form method="post" action="{% url 'despublicar_post' post.pk %}" class="form-acao-inline">
                                     {% csrf_token %}
                                     <button type="submit" class="botao-mini botao-mini-voltar">Despublicar</button>

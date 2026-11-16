@@ -6,7 +6,7 @@ a partir do model automaticamente.
 """
 from django import forms
 
-from .models import Post, Comentario
+from .models import Autor, Categoria, Comentario, Post, Tag
 
 
 class PostForm(forms.ModelForm):
@@ -18,7 +18,18 @@ class PostForm(forms.ModelForm):
     no Painel Editorial, não digitada livremente no formulário —
     isso é o que caracteriza o "fluxo de publicação com aprovação
     editorial" pedido no projeto.
+
+    P2 (Aula 14): o campo `organizacao` também fica de fora — o blog vem
+    do usuário logado, nunca do formulário. E os selects de categoria,
+    autor e tags só mostram as opções do blog do usuário (senão o
+    formulário "vazaria" dados de outros blogs).
     """
+
+    def __init__(self, *args, org=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['categoria'].queryset = Categoria.objects.filter(organizacao=org)
+        self.fields['autor'].queryset = Autor.objects.filter(organizacao=org)
+        self.fields['tags'].queryset = Tag.objects.filter(organizacao=org)
 
     class Meta:
         model = Post

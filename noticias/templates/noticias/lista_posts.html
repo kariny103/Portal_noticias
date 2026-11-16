@@ -1,15 +1,15 @@
 {% extends 'noticias/base.html' %}
 
-{% block titulo %}Portal Notícias Maricá{% endblock %}
+{% block titulo %}{{ blog.nome }}{% endblock %}
 
 {% block content %}
     <section class="hero">
-        <h1>Últimas Notícias</h1>
-        <p>Fique por dentro do que foi aprovado pela nossa equipe editorial.</p>
+        <h1>{{ blog.nome }}</h1>
+        <p>Últimas notícias, aprovadas pela nossa equipe editorial.</p>
     </section>
 
     {# Feature 1 — Busca e Filtro. method="get" coloca os campos na URL (?q=...&categoria=...&tag=...) #}
-    <form method="get" action="{% url 'lista_posts' %}" class="form-busca" role="search">
+    <form method="get" action="{% url 'lista_posts' blog.slug %}" class="form-busca" role="search">
         <div class="form-busca-campo form-busca-texto">
             <label for="busca-q">Buscar</label>
             <input type="search" id="busca-q" name="q" value="{{ request.GET.q }}" placeholder="Título ou resumo da matéria">
@@ -35,7 +35,7 @@
         <div class="form-busca-acoes">
             <button type="submit" class="botao botao-primario">Filtrar</button>
             {% if busca_ativa %}
-                <a href="{% url 'lista_posts' %}" class="botao botao-secundario">Limpar</a>
+                <a href="{% url 'lista_posts' blog.slug %}" class="botao botao-secundario">Limpar</a>
             {% endif %}
         </div>
     </form>
@@ -45,13 +45,13 @@
             {% for post in posts %}
                 <article class="card-post">
                     {% if post.imagem_capa %}
-                        <a href="{% url 'detalhe_post' post.pk %}">
+                        <a href="{% url 'detalhe_post' blog.slug post.pk %}">
                             <img src="{{ post.imagem_capa.url }}" alt="{{ post.titulo }}" class="card-post-imagem">
                         </a>
                     {% endif %}
                     <div class="card-post-corpo">
                         <span class="badge-categoria">{{ post.categoria.nome }}</span>
-                        <h2><a href="{% url 'detalhe_post' post.pk %}">{{ post.titulo }}</a></h2>
+                        <h2><a href="{% url 'detalhe_post' blog.slug post.pk %}">{{ post.titulo }}</a></h2>
                         <p class="card-post-resumo">{{ post.resumo }}</p>
                         <p class="card-post-meta">
                             Por {{ post.autor.nome }} · {{ post.data_publicacao|date:"d/m/Y H:i" }}
@@ -60,7 +60,7 @@
                 </article>
             {% empty %}
                 {% if busca_ativa %}
-                    <p class="vazio">Nenhuma matéria encontrada para os filtros escolhidos{% if request.GET.q %} (busca: "{{ request.GET.q }}"){% endif %}. Tente outro termo ou <a href="{% url 'lista_posts' %}">limpe os filtros</a>.</p>
+                    <p class="vazio">Nenhuma matéria encontrada para os filtros escolhidos{% if request.GET.q %} (busca: "{{ request.GET.q }}"){% endif %}. Tente outro termo ou <a href="{% url 'lista_posts' blog.slug %}">limpe os filtros</a>.</p>
                 {% else %}
                 <p class="vazio">Nenhuma matéria publicada ainda. Vá ao <a href="{% url 'painel_editorial' %}">Painel Editorial</a> e publique a primeira!</p>
                 {% endif %}

@@ -38,7 +38,11 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
 
-    # nosso app
+    # bibliotecas de terceiros
+    'rest_framework',  # P2 — API REST (Aula 13)
+
+    # nossos apps
+    'core',      # P2 — Organizacao (blog) e Perfil (Aula 14)
     'noticias',
 ]
 
@@ -126,6 +130,30 @@ MEDIA_URL = 'media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+
+# --- Login (P2) ------------------------------------------------------------
+# O Painel Editorial exige login: é pelo usuário logado (request.user.perfil)
+# que o sistema descobre de qual blog (organização) ele é.
+
+LOGIN_URL = 'login'
+LOGIN_REDIRECT_URL = 'painel_editorial'
+LOGOUT_REDIRECT_URL = 'home'
+
+
+# --- API REST com Django REST Framework (P2, Aula 13) ----------------------
+# Nenhuma API de escrita aberta ao público: só usuário autenticado.
+# Autenticação por sessão (o mesmo login do site) e Basic (para curl/Postman).
+
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework.authentication.SessionAuthentication',
+        'rest_framework.authentication.BasicAuthentication',
+    ],
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.IsAuthenticated',
+    ],
+}
 
 
 # --- Mensagens (usadas nas views para feedback ao usuário) ---------------

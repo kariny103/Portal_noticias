@@ -1,0 +1,35 @@
+{% extends 'noticias/base.html' %}
+
+{% block titulo %}Entrar — Portal Notícia{% endblock %}
+
+{% block content %}
+    <section class="pagina-form">
+        <h1>Entrar no Painel Editorial</h1>
+        <p>Use o login da sua equipe. Você verá somente as matérias do seu blog.</p>
+
+        <form method="post" class="form-post">
+            {% csrf_token %}
+            {% if form.non_field_errors %}
+                <ul class="mensagens">
+                    {% for erro in form.non_field_errors %}
+                        <li class="mensagem mensagem-error">{{ erro }}</li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+            <p>
+                <label for="id_username">Usuário</label>
+                <input type="text" name="username" id="id_username" autofocus required
+                       value="{{ form.username.value|default:'' }}">
+            </p>
+            <p>
+                <label for="id_password">Senha</label>
+                <input type="password" name="password" id="id_password" required>
+            </p>
+            <input type="hidden" name="next" value="{{ next }}">
+            <div class="form-acoes">
+                <button type="submit" class="botao botao-primario">Entrar</button>
+                <a href="{% url 'home' %}" class="botao botao-secundario">Voltar</a>
+            </div>
+        </form>
+    </section>
+{% endblock %}

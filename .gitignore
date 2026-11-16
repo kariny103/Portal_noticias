@@ -23,3 +23,4 @@ staticfiles/
 # SO
 .DS_Store
 Thumbs.db
+db.sqlite3.backup-*

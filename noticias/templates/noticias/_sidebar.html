@@ -1,7 +1,8 @@
 {% comment %}
 Barra lateral reaproveitada na home e nas páginas de categoria
 (via {% include %}, Aula 5). Espera receber no contexto:
-`mais_lidas` (queryset de Post) e `categorias` (queryset de Categoria).
+`blog` (a Organizacao atual), `mais_lidas` (queryset de Post) e
+`categorias` (queryset de Categoria), já filtrados pelo blog.
 {% endcomment %}
 <aside class="coluna-lateral">
 
@@ -10,7 +11,7 @@ Barra lateral reaproveitada na home e nas páginas de categoria
         {% if mais_lidas %}
             <ol>
                 {% for post in mais_lidas %}
-                    <li><a href="{% url 'detalhe_post' post.pk %}">{{ post.titulo }}</a></li>
+                    <li><a href="{% url 'detalhe_post' blog.slug post.pk %}">{{ post.titulo }}</a></li>
                 {% endfor %}
             </ol>
         {% else %}
@@ -47,7 +48,7 @@ Barra lateral reaproveitada na home e nas páginas de categoria
         <h3>Categorias</h3>
         <ul>
             {% for categoria in categorias %}
-                <li><a href="{% url 'posts_por_categoria' categoria.id %}">{{ categoria.nome }}</a></li>
+                <li><a href="{% url 'posts_por_categoria' blog.slug categoria.id %}">{{ categoria.nome }}</a></li>
             {% endfor %}
         </ul>
     </div>

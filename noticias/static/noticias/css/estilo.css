@@ -898,3 +898,53 @@ a:hover {
         grid-template-columns: 1fr;
     }
 }
+
+/* ---------------------------------------------------------------------
+   P2 — login e multi-blog
+   --------------------------------------------------------------------- */
+
+.barra-menu-usuario {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.usuario-logado {
+    color: #fff;
+    opacity: 0.85;
+    font-family: Arial, sans-serif;
+    font-size: 0.8rem;
+}
+
+.botao-sair {
+    background: transparent;
+    color: #fff;
+    border: 1px solid rgba(255, 255, 255, 0.6);
+    padding: 7px 14px;
+    border-radius: 4px;
+    font-family: Arial, sans-serif;
+    font-size: 0.75rem;
+    font-weight: bold;
+    text-transform: uppercase;
+    cursor: pointer;
+}
+
+.botao-sair:hover {
+    background: rgba(255, 255, 255, 0.15);
+}
+
+.painel-blog {
+    display: block;
+    font-size: 1rem;
+    font-weight: normal;
+    color: var(--cor-texto-suave);
+}
+
+.form-post input[type="password"] {
+    width: 100%;
+    padding: 8px 10px;
+    border: 1px solid var(--cor-borda);
+    border-radius: 6px;
+    font-family: Arial, sans-serif;
+}

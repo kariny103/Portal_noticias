@@ -1,6 +1,6 @@
 {% extends 'noticias/base.html' %}
 
-{% block titulo %}{{ categoria.nome }} — Portal Notícias Maricá{% endblock %}
+{% block titulo %}{{ categoria.nome }} — {{ blog.nome }}{% endblock %}
 
 {% block content %}
     <section class="hero hero-categoria">
@@ -13,13 +13,13 @@
             {% for post in posts %}
                 <article class="card-post">
                     {% if post.imagem_capa %}
-                        <a href="{% url 'detalhe_post' post.pk %}">
+                        <a href="{% url 'detalhe_post' blog.slug post.pk %}">
                             <img src="{{ post.imagem_capa.url }}" alt="{{ post.titulo }}" class="card-post-imagem">
                         </a>
                     {% endif %}
                     <div class="card-post-corpo">
                         <span class="badge-categoria">{{ post.categoria.nome }}</span>
-                        <h2><a href="{% url 'detalhe_post' post.pk %}">{{ post.titulo }}</a></h2>
+                        <h2><a href="{% url 'detalhe_post' blog.slug post.pk %}">{{ post.titulo }}</a></h2>
                         <p class="card-post-resumo">{{ post.resumo }}</p>
                         <p class="card-post-meta">
                             Por {{ post.autor.nome }} · {{ post.data_publicacao|date:"d/m/Y H:i" }}

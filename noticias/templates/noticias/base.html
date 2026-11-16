@@ -14,7 +14,7 @@
 
     <header class="topo">
         <div class="topo-cabecalho">
-            <a href="{% url 'lista_posts' %}" class="logo">
+            <a href="{% if blog %}{% url 'lista_posts' blog.slug %}{% else %}{% url 'home' %}{% endif %}" class="logo">
                 <svg class="icone-jornal" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
                     <rect x="8" y="10" width="48" height="44" rx="3" />
                     <rect x="14" y="18" width="36" height="8" fill="rgba(0,0,0,0.35)" />
@@ -33,12 +33,29 @@
         <nav class="barra-menu">
             <div class="barra-menu-conteudo">
                 <div class="barra-menu-links">
-                    <a href="{% url 'lista_posts' %}">Últimas Notícias</a>
-                    {% for categoria in categorias %}
-                        <a href="{% url 'posts_por_categoria' categoria.id %}">{{ categoria.nome }}</a>
-                    {% endfor %}
+                    {% if blog %}
+                        <a href="{% url 'lista_posts' blog.slug %}">Últimas Notícias</a>
+                        {% for categoria in categorias %}
+                            <a href="{% url 'posts_por_categoria' blog.slug categoria.id %}">{{ categoria.nome }}</a>
+                        {% endfor %}
+                    {% else %}
+                        <a href="{% url 'home' %}">Todos os blogs</a>
+                    {% endif %}
                 </div>
-                <a href="{% url 'painel_editorial' %}" class="botao-painel">Painel Editorial</a>
+                <div class="barra-menu-usuario">
+                    {% if user.is_authenticated %}
+                        <span class="usuario-logado" title="Usuário logado">
+                            {{ user.username }}{% if user.perfil %} · {{ user.perfil.organizacao.nome }}{% endif %}
+                        </span>
+                        <a href="{% url 'painel_editorial' %}" class="botao-painel">Painel Editorial</a>
+                        <form method="post" action="{% url 'logout' %}" class="form-acao-inline">
+                            {% csrf_token %}
+                            <button type="submit" class="botao-sair">Sair</button>
+                        </form>
+                    {% else %}
+                        <a href="{% url 'login' %}" class="botao-painel">Entrar</a>
+                    {% endif %}
+                </div>
             </div>
         </nav>
     </header>
@@ -76,10 +93,13 @@
             <div class="rodape-coluna">
                 <h4>Links Rápidos</h4>
                 <ul>
-                    <li><a href="{% url 'lista_posts' %}">Últimas Notícias</a></li>
+                    {% if blog %}
+                        <li><a href="{% url 'lista_posts' blog.slug %}">Últimas Notícias</a></li>
+                    {% endif %}
+                    <li><a href="{% url 'home' %}">Todos os blogs</a></li>
                     <li><a href="{% url 'painel_editorial' %}">Painel Editorial</a></li>
                     {% for categoria in categorias|slice:":4" %}
-                        <li><a href="{% url 'posts_por_categoria' categoria.id %}">{{ categoria.nome }}</a></li>
+                        <li><a href="{% url 'posts_por_categoria' blog.slug categoria.id %}">{{ categoria.nome }}</a></li>
                     {% endfor %}
                 </ul>
             </div>

@@ -1,0 +1,23 @@
+{% extends 'noticias/base.html' %}
+
+{% block titulo %}Blogs — Portal Notícia{% endblock %}
+
+{% block content %}
+    <section class="hero">
+        <h1>Nossos blogs</h1>
+        <p>Vários portais de notícias na mesma plataforma. Cada blog tem a sua equipe, as suas matérias e as suas categorias.</p>
+    </section>
+
+    <section class="grade-posts">
+        {% for b in blogs %}
+            <article class="card-post">
+                <div class="card-post-corpo">
+                    <h2><a href="{% url 'lista_posts' b.slug %}">{{ b.nome }}</a></h2>
+                    <p class="card-post-meta">no ar desde {{ b.criada_em|date:"d/m/Y" }}</p>
+                </div>
+            </article>
+        {% empty %}
+            <p class="vazio">Nenhum blog cadastrado ainda. Crie um em Admin &gt; Organizações (blogs).</p>
+        {% endfor %}
+    </section>
+{% endblock %}

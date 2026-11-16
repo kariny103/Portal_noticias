@@ -1,11 +1,11 @@
 {% extends 'noticias/base.html' %}
 
-{% block titulo %}{{ post.titulo }} — Portal Notícias Maricá{% endblock %}
+{% block titulo %}{{ post.titulo }} — {{ blog.nome }}{% endblock %}
 
 {% block content %}
     <article class="post-detalhe">
         <span class="badge-categoria">
-            <a href="{% url 'posts_por_categoria' post.categoria.id %}">{{ post.categoria.nome }}</a>
+            <a href="{% url 'posts_por_categoria' blog.slug post.categoria.id %}">{{ post.categoria.nome }}</a>
         </span>
         <h1>{{ post.titulo }}</h1>
         <p class="post-detalhe-meta">
