@@ -9,10 +9,13 @@ Multi-organização (Aula 14): em vez de `queryset = Model.objects.all()`
 filtrando pelo blog do usuário logado. Um id de outro blog dá 404.
 """
 from django.db.models import ProtectedError
-from rest_framework import generics, permissions, serializers
+from rest_framework import generics, permissions, serializers, status
+from rest_framework.response import Response
+from rest_framework.views import APIView
 
 from core.utils import org_atual
 
+from . import dashboard as metricas
 from .models import Autor, Categoria, Post, Tag
 from .serializers import AutorSerializer, CategoriaSerializer, PostSerializer, TagSerializer
 
@@ -98,3 +101,25 @@ class AutorListCreate(DaOrganizacaoMixin, generics.ListCreateAPIView):
 class AutorDetail(DaOrganizacaoMixin, generics.RetrieveUpdateDestroyAPIView):
     model = Autor
     serializer_class = AutorSerializer
+
+
+# --- Dashboard (P2, Aula 17) ----------------------------------------------
+
+class DashboardApi(APIView):
+    """
+    GET /api/dashboard/?inicio=AAAA-MM-DD&fim=AAAA-MM-DD
+
+    O mesmo dado da tela do dashboard, em JSON, para outros clientes.
+    Reaproveita as funções de noticias/dashboard.py: nenhuma consulta
+    duplicada, e o filtro por blog e por período é exatamente o mesmo.
+    Data inválida -> 400 com a mensagem do PeriodoForm.
+    """
+    permission_classes = [permissions.IsAuthenticated, TemOrganizacao]
+
+    def get(self, request):
+        base, form = metricas.filtrar_periodo(
+            request.query_params, metricas.base_do_blog(org_atual(request)),
+        )
+        if not form.is_valid():
+            return Response(form.errors, status=status.HTTP_400_BAD_REQUEST)
+        return Response(metricas.calcular_metricas(base))

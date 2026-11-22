@@ -1,0 +1,113 @@
+{% extends 'noticias/base.html' %}
+{% load static %}
+
+{% block titulo %}Dashboard — {{ blog.nome }}{% endblock %}
+
+{% block content %}
+    <section class="pagina-painel pagina-dashboard">
+        <div class="painel-cabecalho">
+            <h1>Dashboard <small class="painel-blog">{{ blog.nome }}</small></h1>
+            <div class="dashboard-acoes">
+                <a href="{% url 'painel_editorial' %}" class="botao botao-secundario">Painel Editorial</a>
+                <a href="{% url 'exportar_csv' %}{% if query_periodo %}?{{ query_periodo }}{% endif %}" class="botao botao-primario">Exportar CSV</a>
+            </div>
+        </div>
+        <p class="painel-legenda">
+            Métricas das matérias do seu blog{% if periodo_ativo %} criadas no período escolhido{% endif %}.
+            O CSV exporta as mesmas matérias que aparecem aqui.
+        </p>
+
+        {# Filtro por período: validado pelo PeriodoForm (data inválida vira mensagem, não erro 500) #}
+        <form method="get" class="dashboard-filtro">
+            <label for="{{ form.inicio.id_for_label }}">Início:</label> {{ form.inicio }}
+            <label for="{{ form.fim.id_for_label }}">Fim:</label> {{ form.fim }}
+            <button type="submit" class="botao botao-primario">Filtrar</button>
+            {% if request.GET %}<a href="{% url 'dashboard' %}">Limpar</a>{% endif %}
+        </form>
+        {% if form.errors %}
+            <ul class="errorlist">
+                {% for erro in form.non_field_errors %}<li>{{ erro }}</li>{% endfor %}
+                {% for campo in form %}
+                    {% for erro in campo.errors %}<li>{{ campo.label }}: {{ erro }}</li>{% endfor %}
+                {% endfor %}
+            </ul>
+        {% endif %}
+
+        {# 1. KPIs (aggregate) #}
+        <div class="dashboard-cards">
+            <div class="dashboard-card">
+                <small>Matérias</small>
+                <strong>{{ kpis.total }}</strong>
+            </div>
+            <div class="dashboard-card">
+                <small>Publicadas</small>
+                <strong class="kpi-publicado">{{ kpis.publicadas }}</strong>
+            </div>
+            <div class="dashboard-card">
+                <small>Em revisão</small>
+                <strong class="kpi-revisao">{{ kpis.em_revisao }}</strong>
+            </div>
+            <div class="dashboard-card">
+                <small>Rascunhos</small>
+                <strong class="kpi-rascunho">{{ kpis.rascunhos }}</strong>
+            </div>
+            <div class="dashboard-card">
+                <small>Visualizações</small>
+                <strong>{{ kpis.visualizacoes }}</strong>
+            </div>
+            <div class="dashboard-card">
+                <small>Comentários</small>
+                <strong>{{ kpis.comentarios }}</strong>
+            </div>
+        </div>
+
+        <div class="dashboard-grade">
+            {# 3. Série no tempo (TruncMonth + json_script + Chart.js) #}
+            <div class="dashboard-bloco">
+                <h2>Matérias por mês</h2>
+                {% if por_mes %}
+                    <div class="dashboard-grafico"><canvas id="grafico-mes" aria-label="Matérias criadas por mês"></canvas></div>
+                {% else %}
+                    <p class="vazio">Sem dados no período.</p>
+                {% endif %}
+            </div>
+
+            {# 2. Ranking (annotate + order_by) #}
+            <div class="dashboard-bloco">
+                <h2>Matérias mais lidas</h2>
+                <table class="tabela-dashboard">
+                    <thead>
+                        <tr><th>Matéria</th><th>Leituras</th><th>Coment.</th></tr>
+                    </thead>
+                    <tbody>
+                        {% for item in ranking %}
+                            <tr>
+                                <td><a href="{% url 'detalhe_post' blog.slug item.pk %}">{{ item.titulo }}</a></td>
+                                <td class="numero">{{ item.visualizacoes }}</td>
+                                <td class="numero">{{ item.n_comentarios }}</td>
+                            </tr>
+                        {% empty %}
+                            <tr><td colspan="3" class="vazio">Nenhuma matéria publicada no período.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            {# 4. Distribuição (values + annotate) #}
+            <div class="dashboard-bloco dashboard-bloco-largo">
+                <h2>Matérias por categoria</h2>
+                {% if por_categoria %}
+                    <div class="dashboard-grafico"><canvas id="grafico-categoria" aria-label="Matérias por categoria"></canvas></div>
+                {% else %}
+                    <p class="vazio">Sem dados no período.</p>
+                {% endif %}
+            </div>
+        </div>
+    </section>
+
+    {# json_script escreve os dados como JSON seguro (sem risco de XSS) para o JavaScript ler #}
+    {{ por_mes|json_script:"dados-mes" }}
+    {{ por_categoria|json_script:"dados-categoria" }}
+    <script src="{% static 'noticias/js/chart.umd.min.js' %}"></script>
+    <script src="{% static 'noticias/js/dashboard.js' %}"></script>
+{% endblock %}

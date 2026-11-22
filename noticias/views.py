@@ -4,10 +4,11 @@ Views — a lógica de cada página (Aula 5).
 O padrão de sempre: a view busca os dados com o ORM e devolve uma
 resposta, normalmente uma página renderizada por um template.
 
-As views deste arquivo estão organizadas em três grupos:
+As views deste arquivo estão organizadas em quatro grupos:
   1. Público  -> o que qualquer visitante do portal vê
   2. CRUD     -> criar / editar / excluir matérias
   3. Editorial -> o fluxo de publicação (rascunho -> revisão -> publicado)
+  4. Dashboard -> métricas do blog e exportação em CSV (P2, Aula 17)
 
 P2 — multi-organização (Aula 14). Cada organização é um BLOG:
   - Páginas públicas: o blog vem do endereço (/blog/<slug>/...). Elas só
@@ -18,8 +19,11 @@ P2 — multi-organização (Aula 14). Cada organização é um BLOG:
     get_object_or_404 recebe a organização: trocar o id na URL por o de
     uma matéria de outro blog devolve 404.
 """
+import csv
+
 from django.contrib import messages
-from django.db.models import F, Q
+from django.db.models import Count, F, Q
+from django.http import HttpResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.utils import timezone
 from django.views.decorators.http import require_POST
@@ -27,6 +31,7 @@ from django.views.decorators.http import require_POST
 from core.models import Organizacao
 from core.utils import organizacao_required
 
+from . import dashboard as metricas
 from .forms import ComentarioForm, PostForm
 from .models import Categoria, Post, Tag
 
@@ -288,3 +293,77 @@ def despublicar_post(request, pk):
     _mudar_status(request, pk, [Post.PUBLICADO], Post.RASCUNHO,
                   '"{titulo}" despublicado.', messages.warning)
     return redirect('painel_editorial')
+
+
+# ---------------------------------------------------------------------
+# 4. Dashboard e relatórios (P2, Aula 17)
+# ---------------------------------------------------------------------
+
+@organizacao_required
+def dashboard(request):
+    """
+    Uma view, uma base filtrada: toda métrica deriva de `base`, então o
+    blog do usuário e o período escolhido valem para todos os cartões,
+    o ranking e os gráficos. As consultas moram em noticias/dashboard.py
+    (reaproveitadas pela API e pelo CSV).
+    """
+    org = request.org
+    base, form = metricas.filtrar_periodo(request.GET, metricas.base_do_blog(org))
+    return render(request, 'noticias/dashboard.html', {
+        'form': form,
+        'periodo_ativo': form.is_valid() and any(form.cleaned_data.values()),
+        'query_periodo': request.GET.urlencode(),
+        **metricas.calcular_metricas(base),
+        **_menu_contexto(org),
+    })
+
+
+def _celula_segura(valor):
+    """
+    Evita "CSV injection": o Excel interpreta como fórmula uma célula que
+    começa com = + - @. Um título de matéria como "=HYPERLINK(...)" viraria
+    um link malicioso na planilha de quem abrir o relatório.
+    """
+    texto = '' if valor is None else str(valor)
+    if texto[:1] in ('=', '+', '-', '@', '\t', '\r'):
+        return "'" + texto
+    return texto
+
+
+@organizacao_required
+def exportar_csv(request):
+    """
+    Relatório das matérias do blog, com a MESMA base do dashboard
+    (organização + período). select_related evita o N+1 ao ler a
+    categoria e o autor de cada linha; annotate traz a contagem de
+    comentários na mesma consulta.
+    """
+    org = request.org
+    base, _ = metricas.filtrar_periodo(request.GET, metricas.base_do_blog(org))
+    posts = (
+        base.select_related('categoria', 'autor')
+        .annotate(n_comentarios=Count('comentarios'))
+        .order_by('-data_criacao')
+    )
+
+    resp = HttpResponse(content_type='text/csv; charset=utf-8')
+    resp['Content-Disposition'] = f'attachment; filename="materias-{org.slug}.csv"'
+    # BOM: faz o Excel reconhecer o UTF-8 (acentos). Ponto e vírgula: é o
+    # separador que o Excel em português espera.
+    resp.write('﻿')
+    w = csv.writer(resp, delimiter=';')
+    w.writerow(['Título', 'Categoria', 'Autor', 'Status', 'Criada em',
+                'Publicada em', 'Visualizações', 'Comentários'])
+    fuso = timezone.get_current_timezone()
+    for p in posts:
+        w.writerow([
+            _celula_segura(p.titulo),
+            _celula_segura(p.categoria.nome),
+            _celula_segura(p.autor.nome),
+            p.get_status_display(),
+            p.data_criacao.astimezone(fuso).strftime('%d/%m/%Y %H:%M'),
+            p.data_publicacao.astimezone(fuso).strftime('%d/%m/%Y %H:%M') if p.data_publicacao else '',
+            p.visualizacoes,
+            p.n_comentarios,
+        ])
+    return resp

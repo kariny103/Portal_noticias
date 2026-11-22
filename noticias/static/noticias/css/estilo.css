@@ -55,7 +55,9 @@ a:hover {
 
 .topo-cabecalho {
     /* Sem .container: fica fora da centralização em 1100px. */
-    padding: 14px 0 60px 90px;
+    /* Logo mais à esquerda, para não ficar em cima do letreiro
+       "MARICÁ" da foto de capa. */
+    padding: 14px 0 60px 50px;
 }
 
 .logo {
@@ -99,6 +101,8 @@ a:hover {
     font-size: 3.8rem;
     color: #fff;
     line-height: 1;
+    /* Puxada um pouco para a esquerda, alinhando com "PORTAL DE". */
+    margin-left: -8px;
     /* Sombra preta bem suave, só para destacar da foto de fundo. */
     text-shadow: 0 2px 6px rgba(0, 0, 0, 0.45);
 }
@@ -112,15 +116,12 @@ a:hover {
     filter: drop-shadow(0 2px 5px rgba(0, 0, 0, 0.85));
 }
 
-/* Barra horizontal de menu, encostada na base da foto do cabeçalho,
-   com uma faixa preta semitransparente (60% de opacidade) e borda
-   branca por cima e por baixo. Ocupa a largura toda da tela (não fica
-   presa ao .container) para o botão de Painel Editorial ficar mais
-   próximo da borda direita. */
+/* Barra horizontal de menu, encostada na base da foto do cabeçalho:
+   faixa fina, em cor sólida vinho bordô. Ocupa a largura toda da tela
+   (não fica presa ao .container) para o botão de Painel Editorial
+   ficar mais próximo da borda direita. */
 .barra-menu {
-    background: rgba(0, 0, 0, 0.6);
-    border-top: 1px solid rgba(255, 255, 255, 0.6);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.6);
+    background: #6d0f1f;
 }
 
 .barra-menu-conteudo {
@@ -130,18 +131,18 @@ a:hover {
     justify-content: flex-end;
     align-items: center;
     flex-wrap: wrap;
-    gap: 22px;
+    gap: 18px;
     max-width: 1300px;
     margin: 0 auto;
-    padding: 12px 40px;
+    padding: 5px 40px;
 }
 
 .barra-menu-links {
     display: flex;
-    gap: 22px;
+    gap: 18px;
     flex-wrap: wrap;
     font-family: Arial, sans-serif;
-    font-size: 0.85rem;
+    font-size: 0.8rem;
 }
 
 .barra-menu-links a {
@@ -150,7 +151,7 @@ a:hover {
     opacity: 0.85;
     text-transform: uppercase;
     letter-spacing: 0.5px;
-    padding: 4px 2px 6px;
+    padding: 3px 2px 4px;
     border-bottom: 2px solid transparent;
     transition: opacity 0.2s ease, border-color 0.2s ease;
 }
@@ -164,7 +165,8 @@ a:hover {
 .botao-painel {
     background: var(--cor-primaria);
     color: #fff;
-    padding: 8px 18px;
+    border: 1px solid rgba(255, 255, 255, 0.35);
+    padding: 5px 16px;
     border-radius: 4px;
     font-family: Arial, sans-serif;
     font-size: 0.78rem;
@@ -903,25 +905,33 @@ a:hover {
    P2 — login e multi-blog
    --------------------------------------------------------------------- */
 
-.barra-menu-usuario {
+/* Usuário logado: canto superior direito, em cima da foto do topo,
+   para não engrossar a barra de menu. */
+.topo {
+    position: relative;
+}
+
+.topo-usuario {
+    position: absolute;
+    top: 12px;
+    right: 40px;
     display: flex;
     align-items: center;
-    gap: 12px;
-    flex-wrap: wrap;
+    gap: 10px;
 }
 
 .usuario-logado {
     color: #fff;
-    opacity: 0.85;
     font-family: Arial, sans-serif;
     font-size: 0.8rem;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
 }
 
 .botao-sair {
-    background: transparent;
+    background: rgba(0, 0, 0, 0.35);
     color: #fff;
     border: 1px solid rgba(255, 255, 255, 0.6);
-    padding: 7px 14px;
+    padding: 4px 12px;
     border-radius: 4px;
     font-family: Arial, sans-serif;
     font-size: 0.75rem;
@@ -932,6 +942,15 @@ a:hover {
 
 .botao-sair:hover {
     background: rgba(255, 255, 255, 0.15);
+}
+
+@media (max-width: 640px) {
+    /* No celular o usuário fica numa linha própria, acima do logo. */
+    .topo-usuario {
+        position: static;
+        justify-content: flex-end;
+        padding: 10px 16px 0;
+    }
 }
 
 .painel-blog {
@@ -947,4 +966,124 @@ a:hover {
     border: 1px solid var(--cor-borda);
     border-radius: 6px;
     font-family: Arial, sans-serif;
+}
+
+/* ---------------------------------------------------------------------
+   P2 — Dashboard (Aula 17)
+   --------------------------------------------------------------------- */
+
+.barra-menu-botoes {
+    display: flex;
+    gap: 8px;
+}
+
+.dashboard-acoes {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.dashboard-filtro {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 16px;
+    font-size: 0.9rem;
+}
+
+.dashboard-filtro input[type="date"] {
+    padding: 7px 8px;
+    border: 1px solid var(--cor-borda);
+    border-radius: 6px;
+    font-family: Arial, sans-serif;
+}
+
+.dashboard-filtro .botao {
+    padding: 8px 14px;
+}
+
+.dashboard-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 14px;
+    margin-bottom: 20px;
+}
+
+.dashboard-card,
+.dashboard-bloco {
+    background: var(--cor-card);
+    border: 1px solid var(--cor-borda);
+    border-radius: 8px;
+    padding: 16px 18px;
+}
+
+.dashboard-card small {
+    display: block;
+    color: var(--cor-texto-suave);
+    font-size: 0.8rem;
+    margin-bottom: 6px;
+}
+
+.dashboard-card strong {
+    font-size: 2rem;
+    color: var(--cor-primaria-escura);
+}
+
+.dashboard-card .kpi-publicado { color: #1e6b34; }
+.dashboard-card .kpi-revisao { color: #8a5a00; }
+.dashboard-card .kpi-rascunho { color: #666; }
+
+.dashboard-grade {
+    display: grid;
+    grid-template-columns: 1.4fr 1fr;
+    gap: 16px;
+}
+
+.dashboard-bloco-largo {
+    grid-column: 1 / -1;
+}
+
+.dashboard-bloco h2 {
+    font-family: Georgia, serif;
+    font-size: 1.05rem;
+    color: var(--cor-primaria-escura);
+    margin: 0 0 12px;
+}
+
+.dashboard-grafico {
+    position: relative;
+    height: 280px;
+}
+
+.tabela-dashboard {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.88rem;
+}
+
+.tabela-dashboard th,
+.tabela-dashboard td {
+    padding: 9px 6px;
+    border-bottom: 1px solid var(--cor-borda);
+    text-align: left;
+}
+
+.tabela-dashboard th {
+    color: var(--cor-texto-suave);
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.tabela-dashboard .numero {
+    text-align: right;
+    font-weight: bold;
+    color: var(--cor-primaria-escura);
+}
+
+@media (max-width: 900px) {
+    .dashboard-grade {
+        grid-template-columns: 1fr;
+    }
 }

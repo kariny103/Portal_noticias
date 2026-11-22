@@ -63,6 +63,31 @@ class PostForm(forms.ModelForm):
         return conteudo
 
 
+class PeriodoForm(forms.Form):
+    """
+    Filtro de período do Dashboard (P2, Aula 17).
+
+    Um Form comum (não ModelForm) só para VALIDAR os parâmetros da URL:
+    /painel/dashboard/?inicio=2026-01-01&fim=2026-03-31
+    Uma data malformada ("abc") vira erro de formulário, nunca erro 500.
+    """
+    inicio = forms.DateField(
+        required=False, label='Início',
+        widget=forms.DateInput(attrs={'type': 'date'}, format='%Y-%m-%d'),
+    )
+    fim = forms.DateField(
+        required=False, label='Fim',
+        widget=forms.DateInput(attrs={'type': 'date'}, format='%Y-%m-%d'),
+    )
+
+    def clean(self):
+        dados = super().clean()
+        inicio, fim = dados.get('inicio'), dados.get('fim')
+        if inicio and fim and inicio > fim:
+            raise forms.ValidationError('A data de início não pode ser depois da data de fim.')
+        return dados
+
+
 class ComentarioForm(forms.ModelForm):
     class Meta:
         model = Comentario

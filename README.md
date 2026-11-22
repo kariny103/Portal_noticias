@@ -138,7 +138,7 @@ uma FK para a organização em todo model de negócio.
 ### Roteiro de isolamento (Aula 14, slide 18): resultado
 
 Executado com dois usuários de blogs diferentes. Os cenários também viraram
-testes automatizados em `noticias/tests.py` (`python manage.py test`, 21 testes, todos passando).
+testes automatizados em `noticias/tests.py` (`python manage.py test`: 36 testes no total, contando os do dashboard, todos passando).
 
 | Cenário | Esperado | Resultado |
 |---|---|---|
@@ -149,6 +149,46 @@ testes automatizados em `noticias/tests.py` (`python manage.py test`, 21 testes,
 | Editor A cadastra categoria com nome que já existe no blog B | Permitido (unicidade é por blog) | ✅ OK |
 | Editor A cadastra categoria repetida no próprio blog | Erro 400, sem IntegrityError | ✅ OK |
 | Site público do blog A com o id de uma matéria do B | 404 | ✅ OK |
+
+### Pilar 3 — Dashboard e relatórios (Aula 17)
+
+Tela em **`/painel/dashboard/`** (exige login; link "Dashboard" no menu e no
+Painel Editorial). As consultas ficam em `noticias/dashboard.py` e são
+reaproveitadas pela página, pelo CSV e pela API.
+
+**Perguntas do dono do blog → métricas**
+
+| Pergunta | Tipo | Como é calculada |
+|---|---|---|
+| Quanto o blog produziu? Quantas estão publicadas, em revisão ou em rascunho? Quantas leituras e comentários? | KPI (cartões) | `aggregate()` com `Count(..., filter=Q(...))` e `Sum('visualizacoes')`, tudo numa consulta |
+| Quais matérias foram mais lidas? | Ranking (tabela) | `annotate(Count('comentarios'))` + `order_by('-visualizacoes')[:5]` |
+| Quantas matérias foram escritas e publicadas por mês? | Série (gráfico de barras) | `TruncMonth('data_criacao')` + `values` + `annotate` + `order_by('mes')` |
+| Em quais categorias o blog mais escreve? | Distribuição (barras horizontais) | `values('categoria__nome').annotate(Count('id'))` |
+
+- **Uma base filtrada**: toda métrica parte de `Post.objects.filter(organizacao=org)`,
+  então nenhum número de outro blog aparece.
+- **Filtro por período validado**: `?inicio=2026-01-01&fim=2026-03-31`, pelo
+  `PeriodoForm` (`forms.py`). Uma data inválida (`?inicio=abc`) ou um início
+  depois do fim viram mensagem na tela, não erro 500.
+- **Gráficos**: a view manda os dados, o `json_script` escreve o JSON na página,
+  e `static/noticias/js/dashboard.js` desenha com o **Chart.js**. A biblioteca
+  fica em `static/noticias/js/chart.umd.min.js`, então funciona sem internet.
+- **Exportar CSV** (`/painel/dashboard/exportar.csv`): mesma base (blog +
+  período), com `select_related` (sem N+1), UTF-8 com BOM e `;` como
+  separador (o Excel em português abre direto). Células que começam com
+  `= + - @` são neutralizadas contra *CSV injection*.
+- **API**: `GET /api/dashboard/?inicio=...&fim=...` devolve as mesmas métricas
+  em JSON (data inválida → 400).
+- **Desempenho**: a página faz 10 consultas no total (5 do dashboard + login e
+  menu), independente do número de matérias. Índice composto
+  `(organizacao, data_criacao)` no `Post` (migration `0006_indice_dashboard`).
+- **Testes** (`DashboardTestCase` em `tests.py`, 15 testes): total só do
+  próprio blog, período filtrando, dia final incluído, data inválida sem
+  erro 500, dashboard vazio sem erro, login obrigatório, `assertNumQueries`
+  nas métricas, CSV sem N+1, CSV só do blog e sem fórmulas, e a API.
+- **Dados de demonstração**: `python manage.py seed_historico` cria cerca
+  de 30 matérias fictícias espalhadas pelos últimos 7 meses (rode depois do
+  `seed_dados`; não duplica nada se rodar de novo).
 
 ## Estrutura do projeto
 
@@ -300,5 +340,6 @@ então não precisa instalar mais nada.
 - [x] API com Django REST Framework (Aula 13)
 - [x] Múltiplos blogs com isolamento de dados e login (Aula 14)
 - [ ] Papéis de usuário (ex.: editor-chefe aprova/publica, redator só escreve), nas telas e na API (Aula 15)
-- [ ] Dashboard com métricas por blog: matérias por status, mais lidas e publicações por período (Aula 17)
+- [x] Dashboard com métricas por blog: matérias por status, mais lidas e publicações por período (Aula 17)
+- [ ] Dashboard por papel (slide 36 da Aula 17): depende do campo `papel` da Aula 15
 - [ ] Mover a regra de conteúdo mínimo para `Post.clean()` (item 5 do MELHORIAS_P1.md)

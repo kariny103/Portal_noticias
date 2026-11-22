@@ -29,4 +29,8 @@ urlpatterns = [
     path('post/<int:pk>/devolver-rascunho/', views.devolver_rascunho, name='devolver_rascunho'),
     path('post/<int:pk>/publicar/', views.publicar_post, name='publicar_post'),
     path('post/<int:pk>/despublicar/', views.despublicar_post, name='despublicar_post'),
+
+    # Dashboard e relatório (P2, Aula 17 — exige login)
+    path('painel/dashboard/', views.dashboard, name='dashboard'),
+    path('painel/dashboard/exportar.csv', views.exportar_csv, name='exportar_csv'),
 ]

@@ -6,13 +6,18 @@ de testes automatizados, para rodar a cada nova tela:
 
 Cenário: dois blogs (A = Maricá, B = Niterói), um editor em cada um.
 """
+from datetime import datetime
+
 from django.contrib.auth.models import User
+from django.db import connection
 from django.test import TestCase
+from django.test.utils import CaptureQueriesContext
 from django.urls import reverse
 from django.utils import timezone
 
 from core.models import Organizacao, Perfil
-from .models import Autor, Categoria, Post, Tag
+from . import dashboard as metricas
+from .models import Autor, Categoria, Comentario, Post, Tag
 
 CONTEUDO_OK = 'Texto da matéria com tamanho suficiente para passar na validação da P1.'
 
@@ -195,3 +200,179 @@ class AcessoTestCase(TestCase):
         }, content_type='application/json')
         self.assertEqual(resp.status_code, 400)
         self.assertIn('conteudo', resp.json())
+
+
+def _data(ano, mes, dia):
+    return timezone.make_aware(datetime(ano, mes, dia, 12, 0))
+
+
+class DashboardTestCase(TestCase):
+    """
+    Testes das métricas do Dashboard (Aula 17, slide 37): "se o número
+    está errado, o dashboard mente". Dados conhecidos, fáceis de conferir
+    à mão:
+
+      Blog A: 3 matérias  -> jan/2026: 1 publicada (10 leituras, 2 comentários)
+                             fev/2026: 1 publicada (4 leituras) + 1 rascunho
+      Blog B: 5 matérias publicadas (100 leituras cada)
+    """
+
+    @classmethod
+    def setUpTestData(cls):
+        cls.org_a = Organizacao.objects.create(nome='Blog A', slug='blog-a')
+        cls.org_b = Organizacao.objects.create(nome='Blog B', slug='blog-b')
+        cls.org_vazia = Organizacao.objects.create(nome='Blog Vazio', slug='blog-vazio')
+
+        cls.user_a = User.objects.create_user('editor_a', password='senha-teste-123')
+        cls.user_vazio = User.objects.create_user('editor_vazio', password='senha-teste-123')
+        Perfil.objects.create(usuario=cls.user_a, organizacao=cls.org_a)
+        Perfil.objects.create(usuario=cls.user_vazio, organizacao=cls.org_vazia)
+
+        cat_a = Categoria.objects.create(organizacao=cls.org_a, nome='Esportes')
+        cat_a2 = Categoria.objects.create(organizacao=cls.org_a, nome='Política')
+        autor_a = Autor.objects.create(organizacao=cls.org_a, nome='Autor A', email='a@a.com')
+
+        def criar(org, cat, autor, titulo, status, criada, views=0):
+            post = Post.objects.create(
+                organizacao=org, titulo=titulo, resumo='r', conteudo=CONTEUDO_OK,
+                categoria=cat, autor=autor, status=status, visualizacoes=views,
+                data_publicacao=criada if status == Post.PUBLICADO else None,
+            )
+            # data_criacao é auto_now_add: ajustamos depois, via update()
+            Post.objects.filter(pk=post.pk).update(data_criacao=criada)
+            return post
+
+        cls.jan = criar(cls.org_a, cat_a, autor_a, 'Jogo de janeiro', Post.PUBLICADO, _data(2026, 1, 15), 10)
+        criar(cls.org_a, cat_a, autor_a, 'Jogo de fevereiro', Post.PUBLICADO, _data(2026, 2, 10), 4)
+        criar(cls.org_a, cat_a2, autor_a, '=HYPERLINK("http://mal.example")', Post.RASCUNHO, _data(2026, 2, 20))
+        for _ in range(2):
+            Comentario.objects.create(
+                organizacao=cls.org_a, post=cls.jan, nome_autor='Leitor', email='l@l.com', texto='Boa!',
+            )
+
+        cat_b = Categoria.objects.create(organizacao=cls.org_b, nome='Cultura')
+        autor_b = Autor.objects.create(organizacao=cls.org_b, nome='Autor B', email='b@b.com')
+        for i in range(5):
+            criar(cls.org_b, cat_b, autor_b, f'Matéria secreta do B {i}', Post.PUBLICADO, _data(2026, 1, 5), 100)
+
+    def setUp(self):
+        self.client.force_login(self.user_a)
+
+    def _get(self, **params):
+        return self.client.get(reverse('dashboard'), params)
+
+    # --- Total só da organização ------------------------------------------
+
+    def test_kpis_contam_so_o_proprio_blog(self):
+        kpis = self._get().context['kpis']
+        self.assertEqual(kpis['total'], 3)          # o blog B tem 5: não podem aparecer
+        self.assertEqual(kpis['publicadas'], 2)
+        self.assertEqual(kpis['rascunhos'], 1)
+        self.assertEqual(kpis['em_revisao'], 0)
+        self.assertEqual(kpis['visualizacoes'], 14)  # 10 + 4 (o B somaria 500)
+        self.assertEqual(kpis['comentarios'], 2)
+
+    def test_ranking_serie_e_categorias_nao_vazam_dados_de_outro_blog(self):
+        resp = self._get()
+        self.assertEqual([r['titulo'] for r in resp.context['ranking']],
+                         ['Jogo de janeiro', 'Jogo de fevereiro'])
+        self.assertEqual(resp.context['ranking'][0]['n_comentarios'], 2)
+        self.assertEqual(resp.context['por_mes'], [
+            {'mes': '01/2026', 'total': 1, 'publicadas': 1},
+            {'mes': '02/2026', 'total': 2, 'publicadas': 1},
+        ])
+        self.assertEqual(resp.context['por_categoria'], [
+            {'categoria__nome': 'Esportes', 'total': 2},
+            {'categoria__nome': 'Política', 'total': 1},
+        ])
+        self.assertNotContains(resp, 'Matéria secreta do B')
+
+    # --- Período filtrando --------------------------------------------------
+
+    def test_filtro_por_periodo(self):
+        resp = self._get(inicio='2026-02-01', fim='2026-02-28')
+        self.assertEqual(resp.context['kpis']['total'], 2)
+        self.assertEqual([m['mes'] for m in resp.context['por_mes']], ['02/2026'])
+
+    def test_fim_do_periodo_inclui_o_dia_inteiro(self):
+        # A matéria de janeiro foi criada em 15/01 ao meio-dia
+        resp = self._get(inicio='2026-01-15', fim='2026-01-15')
+        self.assertEqual(resp.context['kpis']['total'], 1)
+
+    def test_data_invalida_nao_gera_erro_500(self):
+        resp = self._get(inicio='abc', fim='2026-13-45')
+        self.assertEqual(resp.status_code, 200)
+        self.assertTrue(resp.context['form'].errors)
+        self.assertEqual(resp.context['kpis']['total'], 3)  # ignora o filtro inválido
+
+    def test_inicio_depois_do_fim_e_recusado(self):
+        resp = self._get(inicio='2026-03-01', fim='2026-01-01')
+        self.assertIn('__all__', resp.context['form'].errors)
+
+    # --- Dashboard vazio sem erro ------------------------------------------
+
+    def test_dashboard_de_blog_sem_materias_nao_quebra(self):
+        self.client.force_login(self.user_vazio)
+        resp = self._get()
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.context['kpis']['total'], 0)
+        self.assertEqual(resp.context['kpis']['visualizacoes'], 0)  # Sum() vazio vira 0, não None
+        self.assertContains(resp, 'Sem dados no período.')
+
+    def test_dashboard_exige_login(self):
+        self.client.logout()
+        resp = self._get()
+        self.assertRedirects(resp, f"{reverse('login')}?next={reverse('dashboard')}")
+
+    # --- Desempenho: sem N+1 ---------------------------------------------------
+
+    def test_metricas_usam_numero_fixo_de_consultas(self):
+        # KPI (1) + comentários (1) + ranking (1) + série (1) + categorias (1).
+        # Se alguém introduzir um N+1 aqui, o teste falha.
+        with self.assertNumQueries(5):
+            metricas.calcular_metricas(metricas.base_do_blog(self.org_a))
+
+    def test_csv_nao_tem_n_mais_1(self):
+        # Com N+1, cada matéria a mais custaria 2 consultas (categoria e
+        # autor). Com select_related o total não muda com o tamanho do CSV.
+        with CaptureQueriesContext(connection) as antes:
+            self.client.get(reverse('exportar_csv'))
+        post = Post.objects.filter(organizacao=self.org_a).first()
+        for i in range(5):
+            Post.objects.create(
+                organizacao=self.org_a, titulo=f'Extra {i}', resumo='r', conteudo=CONTEUDO_OK,
+                categoria=post.categoria, autor=post.autor,
+            )
+        with CaptureQueriesContext(connection) as depois:
+            resp = self.client.get(reverse('exportar_csv'))
+        self.assertEqual(len(resp.content.decode('utf-8-sig').strip().splitlines()), 9)
+        self.assertEqual(len(depois), len(antes))
+
+    # --- Exportação CSV ------------------------------------------------------
+
+    def test_csv_exporta_so_o_proprio_blog_e_respeita_o_periodo(self):
+        resp = self.client.get(reverse('exportar_csv'), {'inicio': '2026-02-01'})
+        self.assertEqual(resp['Content-Type'], 'text/csv; charset=utf-8')
+        self.assertIn('attachment', resp['Content-Disposition'])
+        texto = resp.content.decode('utf-8-sig')
+        self.assertEqual(len(texto.strip().splitlines()), 3)  # cabeçalho + 2 matérias de fevereiro
+        self.assertNotIn('secreta do B', texto)
+
+    def test_csv_neutraliza_formula_do_excel(self):
+        texto = self.client.get(reverse('exportar_csv')).content.decode('utf-8-sig')
+        self.assertIn("'=HYPERLINK", texto)
+        self.assertFalse(any(linha.startswith('=') for linha in texto.splitlines()))
+
+    # --- API do dashboard -----------------------------------------------------
+
+    def test_api_dashboard_devolve_as_mesmas_metricas(self):
+        dados = self.client.get('/api/dashboard/').json()
+        self.assertEqual(dados['kpis']['total'], 3)
+        self.assertEqual(len(dados['por_mes']), 2)
+
+    def test_api_dashboard_valida_o_periodo(self):
+        self.assertEqual(self.client.get('/api/dashboard/', {'inicio': 'abc'}).status_code, 400)
+
+    def test_api_dashboard_exige_login(self):
+        self.client.logout()
+        self.assertEqual(self.client.get('/api/dashboard/').status_code, 403)

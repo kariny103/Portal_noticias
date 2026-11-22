@@ -13,6 +13,18 @@
 <body>
 
     <header class="topo">
+        {% if user.is_authenticated %}
+            {# Usuário logado no canto superior direito, em cima da foto (fora da barra de menu) #}
+            <div class="topo-usuario">
+                <span class="usuario-logado" title="Usuário logado">
+                    {{ user.username }}{% if user.perfil %} · {{ user.perfil.organizacao.nome }}{% endif %}
+                </span>
+                <form method="post" action="{% url 'logout' %}" class="form-acao-inline">
+                    {% csrf_token %}
+                    <button type="submit" class="botao-sair">Sair</button>
+                </form>
+            </div>
+        {% endif %}
         <div class="topo-cabecalho">
             <a href="{% if blog %}{% url 'lista_posts' blog.slug %}{% else %}{% url 'home' %}{% endif %}" class="logo">
                 <svg class="icone-jornal" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
@@ -23,9 +35,9 @@
                     <rect x="14" y="47" width="22" height="4" fill="rgba(0,0,0,0.35)" />
                 </svg>
                 <span class="logo-texto">
-                    <span class="logo-marca">Portal</span>
+                    <span class="logo-marca">Portal de</span>
                     <span class="logo-separador" aria-hidden="true"></span>
-                    <span class="logo-noticia">Notícia</span>
+                    <span class="logo-noticia">Notícias</span>
                 </span>
             </a>
         </div>
@@ -42,20 +54,14 @@
                         <a href="{% url 'home' %}">Todos os blogs</a>
                     {% endif %}
                 </div>
-                <div class="barra-menu-usuario">
-                    {% if user.is_authenticated %}
-                        <span class="usuario-logado" title="Usuário logado">
-                            {{ user.username }}{% if user.perfil %} · {{ user.perfil.organizacao.nome }}{% endif %}
-                        </span>
+                {% if user.is_authenticated %}
+                    <div class="barra-menu-botoes">
+                        <a href="{% url 'dashboard' %}" class="botao-painel">Dashboard</a>
                         <a href="{% url 'painel_editorial' %}" class="botao-painel">Painel Editorial</a>
-                        <form method="post" action="{% url 'logout' %}" class="form-acao-inline">
-                            {% csrf_token %}
-                            <button type="submit" class="botao-sair">Sair</button>
-                        </form>
-                    {% else %}
-                        <a href="{% url 'login' %}" class="botao-painel">Entrar</a>
-                    {% endif %}
-                </div>
+                    </div>
+                {% else %}
+                    <a href="{% url 'login' %}" class="botao-painel">Entrar</a>
+                {% endif %}
             </div>
         </nav>
     </header>

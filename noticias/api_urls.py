@@ -7,6 +7,7 @@ Endereços finais:
   /api/categorias/   /api/categorias/<id>/
   /api/tags/         /api/tags/<id>/
   /api/autores/      /api/autores/<id>/
+  /api/dashboard/    (só GET: métricas do blog — Aula 17)
 """
 from django.urls import path
 
@@ -21,4 +22,5 @@ urlpatterns = [
     path('tags/<int:pk>/', api_views.TagDetail.as_view(), name='api_tag_detalhe'),
     path('autores/', api_views.AutorListCreate.as_view(), name='api_autores'),
     path('autores/<int:pk>/', api_views.AutorDetail.as_view(), name='api_autor_detalhe'),
+    path('dashboard/', api_views.DashboardApi.as_view(), name='api_dashboard'),
 ]

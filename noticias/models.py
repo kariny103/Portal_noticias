@@ -124,6 +124,12 @@ class Post(DaOrganizacao):
         verbose_name = 'Post'
         verbose_name_plural = 'Posts'
         ordering = ['-data_criacao']
+        # P2, Aula 17: o dashboard sempre filtra por blog + período
+        # (data_criacao) e agrupa por mês. Um índice composto nessa ordem
+        # atende o filter, o order_by e o TruncMonth sem ler a tabela toda.
+        indexes = [
+            models.Index(fields=['organizacao', 'data_criacao'], name='post_org_data_idx'),
+        ]
 
     def __str__(self):
         return self.titulo
